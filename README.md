@@ -25,6 +25,41 @@ The system relies on a decoupled architecture.
 1. **The Daemon**: A Python/FastAPI service heavily leveraging MCP to execute Gmail API operations based on Claude’s reasoning.
 2. **The Dashboard**: A lightweight React frontend visualizer indicating latency, classification accuracy, and agentic confidence intervals.
 
+```mermaid
+flowchart TD
+    classDef daemon fill:#eab308,color:#000,stroke:#ca8a04,stroke-width:2px
+    classDef frontend fill:#3b82f6,color:#fff,stroke:#2563eb,stroke-width:2px
+    classDef llm fill:#8b5cf6,color:#fff,stroke:#7c3aed,stroke-width:2px
+    classDef gmail fill:#ef4444,color:#fff,stroke:#dc2626,stroke-width:2px
+
+    subgraph User["User & Dashboard"]
+        direction LR
+        UI["React Dashboard\n(Real-time Audit & Override)"]:::frontend
+        UserRole((User))
+        UserRole -->|"Audits & Approves"| UI
+    end
+
+    subgraph Backend["Agent Daemon (FastAPI)"]
+        direction TB
+        MCP["MCP Server\n(Tool Executor)"]:::daemon
+        Orchestrator["Agent Orchestrator\n(State Management)"]:::daemon
+        Rules["Semantic Filter Logic\n(Labeling, Spam, Archive)"]:::daemon
+    end
+
+    subgraph External["External APIs"]
+        direction TB
+        GMAIL["Gmail API\n(OAuth2)"]:::gmail
+        CLAUDE["Claude LLM\n(Semantic Reasoning)"]:::llm
+    end
+
+    UI <--"WebSocket/REST"--> Orchestrator
+    Orchestrator --> MCP
+    MCP --> Rules
+    
+    Rules <--"Fetch/Modify"--> GMAIL
+    Orchestrator <--"Intent Eval"--> CLAUDE
+```
+
 ## 🔧 Installation
 
 **Backend Setup:**
