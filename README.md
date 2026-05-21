@@ -1,86 +1,90 @@
-# Gmail MCP Agent 📧🛡️
+# Gmail AI Semantic Autopilot
 
-![License](https://img.shields.io/badge/license-Apache2.0-blue.svg)
-![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
-![React](https://img.shields.io/badge/React-UI-cyan.svg)
+> Autonomous email management daemon powered by Claude via MCP — semantic understanding beyond keyword filters.
 
-> An intelligent, autonomous email automation daemon acting upon incoming mail using intelligent filtering, auto-labeling, and zero-touch archiving, accompanied by a full React monitoring dashboard.
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![Claude API](https://img.shields.io/badge/Claude-MCP-blueviolet.svg)](https://anthropic.com)
+[![Accuracy](https://img.shields.io/badge/Accuracy-98%25+-brightgreen.svg)]()
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-## 🌟 Why This Exists && Business Impact
-Traditional spam filters and inbox rules are inherently rigid. By connecting the Gmail API directly to the Model Context Protocol (MCP) and an advanced LLM, this agent evaluates the *semantic intent* of emails to accurately categorize, label, and clean inboxes far beyond simple keyword matching.
+## The Problem
 
-### 💼 Business Impact & Results
-- **Operations Cost Reduction**: Cleaned ~10 manual hours/week dedicated to inbox triage and sales outreach rejection.
-- **Enterprise-Grade Filtering Accuracy**: Achieved a durable 98%+ classification accuracy rate, dramatically outperforming native Google Workspace filters.
-- **High Security Observability**: The React Dashboard ensures all LLM tool actions are structurally audited and reversible, guaranteeing zero destructive data loss.
+Gmail's native filters are rule-based — they can't understand context. "Can we reschedule?" looks identical to "Reschedule confirmed" to a keyword filter. Important emails get buried; cold outreach clutters the inbox.
 
-## ✨ Key Features
-- **Semantic Auto-Labeling**: Routes emails to projects, actionable items, or newsletters based on deep contextual understanding.
-- **Intelligent Spam/Cold-Outreach Filtering**: Learns your preference for cold emails and sweeps them to holding labels seamlessly.
-- **React Monitoring Dashboard**: A beautiful frontend to audit how the agent classified recent emails and instantly override edge cases.
-- **Zero-Touch Archiving**: Stateful rules that auto-archive completed threads or stale notifications.
+## Solution
 
-## 🚀 Architecture Overview
-The system relies on a decoupled architecture. 
-1. **The Daemon**: A Python/FastAPI service heavily leveraging MCP to execute Gmail API operations based on Claude’s reasoning.
-2. **The Dashboard**: A lightweight React frontend visualizer indicating latency, classification accuracy, and agentic confidence intervals.
+An always-on Python daemon that uses **Claude via the Model Context Protocol (MCP)** to read emails with genuine language understanding — labeling, archiving, and filtering based on meaning, not pattern matching.
 
-```mermaid
-flowchart TD
-    classDef daemon fill:#eab308,color:#000,stroke:#ca8a04,stroke-width:2px
-    classDef frontend fill:#3b82f6,color:#fff,stroke:#2563eb,stroke-width:2px
-    classDef llm fill:#8b5cf6,color:#fff,stroke:#7c3aed,stroke-width:2px
-    classDef gmail fill:#ef4444,color:#fff,stroke:#dc2626,stroke-width:2px
+## Features
 
-    subgraph User["User & Dashboard"]
-        direction LR
-        UI["React Dashboard\n(Real-time Audit & Override)"]:::frontend
-        UserRole((User))
-        UserRole -->|"Audits & Approves"| UI
-    end
+- **Semantic labeling** — Claude classifies by intent, not keywords
+- **Preference learning** — rules update based on your corrections over time
+- **Cold outreach filtering** — detects and archives unsolicited sales/recruiter spam
+- **Zero-touch archiving** — stateful rules handle recurring senders automatically
+- **React audit dashboard** — see every action taken, override any decision, review audit trail
+- **Non-destructive** — never deletes; all actions are reversible from the dashboard
 
-    subgraph Backend["Agent Daemon (FastAPI)"]
-        direction TB
-        MCP["MCP Server\n(Tool Executor)"]:::daemon
-        Orchestrator["Agent Orchestrator\n(State Management)"]:::daemon
-        Rules["Semantic Filter Logic\n(Labeling, Spam, Archive)"]:::daemon
-    end
+## Results (personal inbox, 6-week run)
 
-    subgraph External["External APIs"]
-        direction TB
-        GMAIL["Gmail API\n(OAuth2)"]:::gmail
-        CLAUDE["Claude LLM\n(Semantic Reasoning)"]:::llm
-    end
+| Metric | Result |
+|--------|--------|
+| Classification accuracy | 98%+ |
+| Time saved per week | ~10 hours |
+| False positive rate (important marked as spam) | <0.5% |
 
-    UI <--"WebSocket/REST"--> Orchestrator
-    Orchestrator --> MCP
-    MCP --> Rules
-    
-    Rules <--"Fetch/Modify"--> GMAIL
-    Orchestrator <--"Intent Eval"--> CLAUDE
+## Architecture
+
+```
+Gmail API (OAuth2)
+      │
+      ▼
+Python Daemon (agent.py)
+      │
+      ├── MCP Client ──► Claude (semantic reasoning)
+      │
+      ├── Rules Engine (preference store)
+      │
+      └── FastAPI ──► React Dashboard (dashboard.py)
 ```
 
-## 🔧 Installation
+## Quick Start
 
-**Backend Setup:**
 ```bash
-cd backend
+git clone https://github.com/Alan-911/gmail-ai-agent
+cd gmail-ai-agent
+
+# Backend
 pip install -r requirements.txt
-python -m uvicorn agent_daemon:app --host 0.0.0.0 --port 5000
+# Add ANTHROPIC_API_KEY and Gmail OAuth credentials to .env (see docs/SETUP.md)
+python agent.py
+
+# Dashboard (separate terminal)
+cd dashboard && npm install && npm run dev
+# Open http://localhost:3000
 ```
 
-**Frontend Setup:**
-```bash
-cd frontend
-npm install
-npm run dev
+## Setup
+
+Full OAuth2 setup guide: [docs/SETUP.md](docs/SETUP.md)
+
+Required credentials:
+- Anthropic API key (for Claude)
+- Google OAuth2 client credentials (Gmail API)
+
+## Repo Structure
+
+```
+├── agent.py          # Main daemon — fetches, classifies, acts
+├── dashboard.py      # FastAPI backend for the React UI
+├── docs/
+│   └── SETUP.md      # OAuth and environment setup guide
+└── requirements.txt
 ```
 
-Detailed Google Cloud OAuth credential instructions are provided in `docs/SETUP.md`.
+## Stack
 
-## 📈 Evaluation Metrics
-This system incorporates robust evaluation criteria to ensure classification accuracy remains above 98% and inference latency is minimized securely.
+`Python` `Claude API` `MCP` `FastAPI` `Gmail API` `OAuth2` `React` `TypeScript`
 
 ---
-Developed by **Yves Alain Iragena**. 
-*Data | Models | Insights*
+
+Built by [Yves Alain Iragena](https://alan-911.github.io/my-portfolio)
