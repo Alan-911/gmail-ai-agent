@@ -2,8 +2,11 @@
 
 > An always-on Python daemon that reads your inbox with Claude and takes action — not keyword matching, actual language understanding.
 
+**[🚀 Live Demo →](https://gmail-ai-agent-five.vercel.app)**
+
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![Claude Haiku](https://img.shields.io/badge/Claude-Haiku-blueviolet.svg)](https://anthropic.com)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-22c55e.svg)](https://gmail-ai-agent-five.vercel.app)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green.svg)](https://fastapi.tiangolo.com)
 [![Gmail API](https://img.shields.io/badge/Gmail%20API-v1-red.svg)](https://developers.google.com/gmail/api)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
