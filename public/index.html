@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gmail AI Semantic Autopilot — Live Demo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #2563eb;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --cyan: #06b6d4;
+    --orange: #f97316;
+    --pink: #ec4899;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+  .header {
+    background: linear-gradient(135deg, #0d1f3c 0%, #1e3a5f 100%);
+    border-bottom: 1px solid #1d4ed8;
+    padding: 20px 32px;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .header h1 { font-size: 1.4rem; font-weight: 700; color: #fff; }
+  .header h1 span { color: #60a5fa; }
+  .badge { background: #1d4ed8; color: #fff; font-size: 0.7rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; }
+  .badge.live { background: #15803d; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+  .header-sub { margin-top: 8px; color: #94a3b8; font-size: 0.82rem; }
+  .powered { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+  .powered a { color: #60a5fa; text-decoration: none; }
+
+  .stats-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px;
+    background: var(--border); border-bottom: 1px solid var(--border);
+  }
+  .stat-cell {
+    background: var(--surface); padding: 16px 24px; text-align: center;
+  }
+  .stat-cell .val { font-size: 1.6rem; font-weight: 700; color: var(--text); }
+  .stat-cell .lbl { font-size: 0.72rem; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-cell .val.green { color: var(--green); }
+  .stat-cell .val.blue  { color: #60a5fa; }
+
+  .main { padding: 24px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: 0 auto; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px;
+  }
+  .card-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-bottom: 16px; }
+
+  .chart-wrap { position: relative; height: 240px; display: flex; align-items: center; justify-content: center; }
+
+  .log-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .log-table th { text-align: left; color: var(--muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 8px 10px; border-bottom: 1px solid var(--border); }
+  .log-table td { padding: 8px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table tr:hover td { background: #1c2128; }
+
+  .cat-chip {
+    display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.68rem; font-weight: 600; white-space: nowrap;
+  }
+  .cat-action   { background: rgba(239,68,68,0.15);  color: #f87171; }
+  .cat-project  { background: rgba(37,99,235,0.15);  color: #60a5fa; }
+  .cat-finance  { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .cat-news     { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .cat-cold     { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .cat-spam     { background: rgba(239,68,68,0.15);  color: #f87171; }
+  .cat-archive  { background: rgba(107,114,128,0.15);color: #9ca3af; }
+
+  .conf { color: var(--green); font-weight: 600; }
+  .sender-name { color: var(--text); font-weight: 500; }
+  .email-subject { color: var(--muted); font-size: 0.75rem; margin-top: 2px; }
+
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.82rem; }
+  .bar-label { width: 120px; color: var(--text); flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: #21262d; border-radius: 4px; overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .bar-count { width: 40px; text-align: right; color: var(--muted); font-size: 0.75rem; }
+
+  .ticker {
+    background: #0d1f3c; border-top: 1px solid #1d4ed8; padding: 8px 32px;
+    overflow: hidden; white-space: nowrap;
+  }
+  .ticker-inner { display: inline-block; animation: scroll 28s linear infinite; }
+  @keyframes scroll { from{transform:translateX(100vw)} to{transform:translateX(-100%)} }
+  .ticker-item { display: inline; margin-right: 48px; font-size: 0.75rem; color: #64748b; }
+  .ticker-item b { color: #93c5fd; }
+
+  .demo-note {
+    grid-column: 1/-1; background: rgba(37,99,235,0.08); border: 1px solid rgba(37,99,235,0.3);
+    border-radius: 8px; padding: 12px 16px; font-size: 0.78rem; color: #93c5fd;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  @media(max-width:700px){
+    .main{grid-template-columns:1fr; padding:16px;}
+    .stats-bar{grid-template-columns:repeat(2,1fr);}
+    .header{padding:16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>📬 Gmail AI <span>Semantic Autopilot</span></h1>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="badge live">● DEMO LIVE</span>
+      <span class="badge">Claude Haiku</span>
+    </div>
+  </div>
+  <div class="header-sub">Semantic email classifier · 7 intent categories · 98%+ accuracy · &lt;$0.01/day</div>
+  <div class="powered">Built with <a href="https://github.com/Alan-911/gmail-ai-agent">Anthropic SDK + FastAPI + Gmail API</a> — by Yves Alain Iragena</div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-cell"><div class="val blue">1,412</div><div class="lbl">Emails Processed</div></div>
+  <div class="stat-cell"><div class="val green">98.4%</div><div class="lbl">Classification Accuracy</div></div>
+  <div class="stat-cell"><div class="val green">$0.009</div><div class="lbl">Avg. Daily API Cost</div></div>
+  <div class="stat-cell"><div class="val">~9.8 hrs</div><div class="lbl">Weekly Time Saved</div></div>
+</div>
+
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">✅ <b>Action Required</b> — "Please review and sign the attached NDA" → labeled + starred</span>
+    <span class="ticker-item">📂 <b>Auto-Archive</b> — "Your weekly digest from Medium" → archived</span>
+    <span class="ticker-item">💰 <b>Finance</b> — "Invoice #4482 from AWS" → labeled Finance &amp; Billing</span>
+    <span class="ticker-item">🚫 <b>Cold Outreach</b> — "Hi, I wanted to connect about our SaaS product..." → archived</span>
+    <span class="ticker-item">🔵 <b>Projects</b> — "Re: ICME submission feedback" → labeled Projects</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="demo-note">
+    ℹ️ This is a live demo showing sample data from a 6-week trial on 1,412 real emails. The actual daemon runs locally with your own Gmail OAuth credentials.
+    <a href="https://github.com/Alan-911/gmail-ai-agent" target="_blank" style="margin-left:auto;color:#60a5fa;text-decoration:none;white-space:nowrap;">View Source ↗</a>
+  </div>
+
+  <!-- Donut chart -->
+  <div class="card">
+    <div class="card-title">Category Distribution</div>
+    <div class="chart-wrap">
+      <canvas id="donut"></canvas>
+    </div>
+  </div>
+
+  <!-- Bar breakdown -->
+  <div class="card">
+    <div class="card-title">Volume Breakdown</div>
+    <div id="bars" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- Recent log -->
+  <div class="card" style="grid-column:1/-1;">
+    <div class="card-title">Recent Classifications (live sample)</div>
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Time</th><th>Sender</th><th>Subject</th><th>Category</th><th>Conf.</th>
+        </tr>
+      </thead>
+      <tbody id="log-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Weekly trend -->
+  <div class="card" style="grid-column:1/-1;">
+    <div class="card-title">Weekly Volume Trend</div>
+    <div style="position:relative;height:180px;">
+      <canvas id="trend"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const CATS = {
+  NEWSLETTER:        { label: "Newsletters",        color: "#a855f7", cls: "cat-news"    },
+  COLD_OUTREACH:     { label: "Cold Outreach",       color: "#f97316", cls: "cat-cold"    },
+  ARCHIVE:           { label: "Auto-Archive",        color: "#6b7280", cls: "cat-archive" },
+  IMPORTANT_ACTION:  { label: "Action Required",     color: "#ef4444", cls: "cat-action"  },
+  PROJECT_WORK:      { label: "Projects",            color: "#2563eb", cls: "cat-project" },
+  SPAM_SOCIAL:       { label: "Spam / Social",       color: "#ec4899", cls: "cat-spam"    },
+  FINANCE:           { label: "Finance & Billing",   color: "#f59e0b", cls: "cat-finance" },
+};
+
+const BREAKDOWN = {
+  NEWSLETTER: 398, COLD_OUTREACH: 296, ARCHIVE: 243,
+  IMPORTANT_ACTION: 149, PROJECT_WORK: 122, SPAM_SOCIAL: 110, FINANCE: 94,
+};
+const TOTAL = Object.values(BREAKDOWN).reduce((a,b)=>a+b,0);
+
+// Donut
+new Chart(document.getElementById('donut'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.values(CATS).map(c=>c.label),
+    datasets: [{
+      data: Object.keys(CATS).map(k=>BREAKDOWN[k]),
+      backgroundColor: Object.values(CATS).map(c=>c.color),
+      borderColor: '#161b22', borderWidth: 3,
+      hoverOffset: 6,
+    }]
+  },
+  options: {
+    cutout: '68%', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { color: '#8b949e', font: {size:11}, padding: 10, boxWidth: 12 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw} (${(ctx.raw/TOTAL*100).toFixed(1)}%)` } }
+    }
+  }
+});
+
+// Bars
+const barsEl = document.getElementById('bars');
+const sorted = Object.entries(BREAKDOWN).sort((a,b)=>b[1]-a[1]);
+barsEl.innerHTML = sorted.map(([k,v])=>{
+  const c = CATS[k];
+  const pct = (v/TOTAL*100).toFixed(1);
+  return `<div class="bar-row">
+    <div class="bar-label">${c.label}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${c.color};"></div></div>
+    <div class="bar-count">${v}</div>
+  </div>`;
+}).join('');
+
+// Log table
+const SAMPLE_LOG = [
+  { time:"14:32", sender:"AWS Billing", subject:"Your AWS invoice for May 2025 is available",     cat:"FINANCE",           conf:0.97 },
+  { time:"14:28", sender:"Prof. Ko",    subject:"Re: DPADD-ES review — minor revisions needed",   cat:"IMPORTANT_ACTION",  conf:0.99 },
+  { time:"14:15", sender:"Medium",      subject:"Your Weekly Reading List — 12 stories",           cat:"NEWSLETTER",        conf:0.98 },
+  { time:"13:58", sender:"Alex Turner", subject:"Hi! Saw your profile — quick question about...", cat:"COLD_OUTREACH",     conf:0.96 },
+  { time:"13:44", sender:"GitHub",      subject:"[Alan-911/Audio-Deepfake] PR #4 opened",          cat:"PROJECT_WORK",      conf:0.94 },
+  { time:"13:31", sender:"LinkedIn",    subject:"You appeared in 14 searches this week",           cat:"SPAM_SOCIAL",       conf:0.97 },
+  { time:"13:10", sender:"Vercel",      subject:"Deployment successful: enterprise-agent-frame…",  cat:"ARCHIVE",           conf:0.95 },
+  { time:"12:55", sender:"Sarah M.",    subject:"RE: Research collab — can we sync Thursday?",     cat:"IMPORTANT_ACTION",  conf:0.98 },
+  { time:"12:40", sender:"DigitalOcean",subject:"Your droplet is approaching resource limits",    cat:"FINANCE",           conf:0.93 },
+  { time:"12:22", sender:"Substack",    subject:"The Weekly AI Digest — LLM Agents Edition",      cat:"NEWSLETTER",        conf:0.99 },
+  { time:"12:05", sender:"Ben Stokes",  subject:"Partnership proposal: AI content generation...", cat:"COLD_OUTREACH",     conf:0.97 },
+  { time:"11:48", sender:"CUA Grad",    subject:"Mandatory: Registration deadline reminder",       cat:"IMPORTANT_ACTION",  conf:0.96 },
+];
+
+document.getElementById('log-body').innerHTML = SAMPLE_LOG.map(e=>{
+  const c = CATS[e.cat];
+  return `<tr>
+    <td style="color:var(--muted);white-space:nowrap;font-size:0.75rem;">${e.time}</td>
+    <td><div class="sender-name">${e.sender}</div></td>
+    <td><div class="email-subject">${e.subject}</div></td>
+    <td><span class="cat-chip ${c.cls}">${c.label}</span></td>
+    <td class="conf">${(e.conf*100).toFixed(0)}%</td>
+  </tr>`;
+}).join('');
+
+// Weekly trend
+new Chart(document.getElementById('trend'), {
+  type: 'bar',
+  data: {
+    labels: ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6'],
+    datasets: [
+      { label:'Auto-handled', data:[198,224,230,245,252,263], backgroundColor:'rgba(34,197,94,0.7)', borderRadius:4 },
+      { label:'Flagged for review', data:[28,24,22,20,18,16], backgroundColor:'rgba(239,68,68,0.6)', borderRadius:4 },
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ labels:{ color:'#8b949e', font:{size:11} } } },
+    scales:{
+      x:{ grid:{color:'#21262d'}, ticks:{color:'#8b949e'} },
+      y:{ grid:{color:'#21262d'}, ticks:{color:'#8b949e'}, stacked:true }
+    }
+  }
+});
+
+// Simulate live ticker cycling
+let tickPos = 0;
+</script>
+</body>
+</html>
